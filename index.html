@@ -1,31 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Free Proxy</title>
+  <title>Proxy Hub</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: Arial; text-align: center; padding: 40px; background: #111; color: #0f0; }
     input, button { padding: 12px; margin: 10px; width: 90%; max-width: 500px; font-size: 18px; }
     button { background: #0f0; color: black; border: none; cursor: pointer; }
     iframe { width: 100%; height: 80vh; border: 1px solid #0f0; margin-top: 20px; }
+    .note { color: #ccc; font-size: 14px; }
   </style>
 </head>
 <body>
-  <h1>Free Proxy</h1>
-  <p>Works on Chromebook | No install</p>
+  <h1>Proxy Hub</h1>
+  <p class="note">For Discord, Netflix, Games | Works on Chromebook</p>
   <input type="text" id="url" placeholder="https://discord.com" />
   <button onclick="go()">GO</button>
   <iframe id="frame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
   <script>
+    // Public CORS proxy (fallback if direct fails)
+    const CORS_PROXY = 'https://api.allorigins.win/raw?url='; // Or 'https://thingproxy.freeboard.io/fetch/' if needed
+
     function go() {
       const u = document.getElementById('url').value.trim();
       if (!u) return;
-      const proxy = `/api/proxy?url=${encodeURIComponent(u.startsWith('http') ? u : 'https://' + u)}`;
-      document.getElementById('frame').src = proxy;
+      let fullUrl = u.startsWith('http') ? u : 'https://' + u;
+      // Try direct first, fallback to CORS proxy
+      document.getElementById('frame').src = fullUrl;
+      setTimeout(() => {
+        if (document.getElementById('frame').contentDocument?.body.innerHTML.includes('blocked')) {
+          document.getElementById('frame').src = CORS_PROXY + encodeURIComponent(fullUrl);
+        }
+      }, 2000);
     }
-    if (location.search) {
-      const url = new URLSearchParams(location.search).get('url');
-      if (url) document.getElementById('frame').src = `/api/proxy?url=${encodeURIComponent(url)}`;
+    // Auto-load from URL param
+    const params = new URLSearchParams(location.search);
+    if (params.get('url')) {
+      document.getElementById('url').value = params.get('url');
+      go();
     }
   </script>
 </body>
